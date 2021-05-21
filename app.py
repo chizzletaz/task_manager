@@ -1,5 +1,6 @@
 import os
 from posix import environ
+import re
 from flask import (
     Flask, flash, render_template, 
     redirect, request, session, url_for)
@@ -22,8 +23,10 @@ mongo = PyMongo(app)    # setup an instance of PyMongo
 @app.route("/")
 @app.route("/get_tasks")
 def get_tasks():
+    # get the tasks from the database
     tasks = list(mongo.db.tasks.find())
-    return render_template("tasks.html", tasks = tasks)
+    # use the tasks in the html file by adding tasks=tasks to the render_template function
+    return render_template("tasks.html", tasks=tasks)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -98,9 +101,27 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/add_task")
+@app.route("/add_task", methods=["GET", "POST"])
 def add_task():
+    if request.method == "POST":
+        # make a ternary operator for is_urgent --> is true if condition else false
+        is_urgent = "on" if request.form.get("is_urgent") else "off"
+        # create dictionary of items from the form to be stored in the db
+        task = {
+            "category_name": request.form.get("category_name"),
+            "task_name": request.form.get("task_name"),
+            "task_description": request.form.get("task_description"),
+            "is_urgent": is_urgent,
+            "due_date": request.form.get("due_date"),
+            "created_by": session["user"]
+        }
+        mongo.db.tasks.insert_one(task)
+        flash("Task Successfully Added")
+        return redirect(url_for('get_tasks'))
+
+    # get the categories from the db and sort them alphabetically
     categories = mongo.db.categories.find().sort("category_name", 1)
+    # use the categories in the html file by adding categories=caegories to the render_template function  
     return render_template("add_task.html", categories=categories)
 
 if __name__ == "__main__":
