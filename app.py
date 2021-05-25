@@ -1,6 +1,7 @@
 import os
 from posix import environ
 import re
+from typing import get_args
 from flask import (
     Flask, flash, render_template, 
     redirect, request, session, url_for)
@@ -186,6 +187,12 @@ def edit_category(category_id):
     category = mongo.db.categories.find_one({"_id": ObjectId(category_id)})
     return render_template("edit_category.html", category=category)
 
+
+@app.route("/delete_category/<category_id>")
+def delete_category(category_id):
+    mongo.db.categories.remove({"_id": ObjectId(category_id)})
+    flash("Category Successfully Deleted")
+    return redirect(url_for("get_categories"))
 
 if __name__ == "__main__":
     app.run(
